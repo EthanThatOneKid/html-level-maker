@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+
+<html>
+  
+<head>
+    
+	<meta name="viewport" width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0>
+    
+	<style> 
+		body {padding: 0; margin: 0;} 
+	</style>
+ 
+	<link rel="shortcut icon" type="image/x-icon" href="http://ethandavidson.com/l/img/ethan-logo.gif">
+	<title>Make a Level</title>
+	<script src="libraries/p5.js"></script>
+     
+	<script src="libraries/p5.dom.js"></script>
+      
+	<script src="libraries/p5.sound.js"></script>
+    
+	<script src="sketch.js"></script>
+  
+	<script src="user.js"></script>
+  
+</head>
+ 
+<style>
+        tr, td, p {
+            border: 1px solid;
+	    background-color: white;
+        }
+	#dropzone {
+		border-style: dashed;
+		padding: 24px;
+	}
+	#color-picker-display {
+		border-style: dashed;
+		padding: 10px;
+	}
+    </style>
+    <script>
+	function changeMusic() {
+		var url = document.getElementById('music-input').value, newUrl;
+		var code = '';
+		for (var i = 0; i < url.length; i++) {
+        
+			if (url[i] === 'v' && url[i + 1] === '=') {
+            
+				for (var codeIndex = 1; codeIndex < 12; codeIndex++) {
+                
+					code += url[i + 1 + codeIndex];
+            
+				}
+            
+				break;
+        
+			}
+    
+		}
+
+		newUrl = "https://www.youtube.com/embed/" + code + "?autoplay=1&loop=1";
+		document.getElementById('song-player').src = newUrl;
+	}
+
+        function changeColor(id) {
+	    var col = hexToRgb(document.getElementById('color-picker').value);
+            document.getElementById(id).style.backgroundColor = 'rgb('+col.r+','+col.g+','+col.b+')';
+        }
+        
+        function showLevel() {
+            var slider = document.getElementById('dimensions');
+            document.getElementById('show-dimensions').innerHTML = slider.value + " x " + slider.value;
+            
+            var cellCount = 0;
+            var newTable = "<table id='level-editor'>"
+            for (let rows = 0; rows < slider.value; rows++) {
+                newTable += "<tr>";
+                for (let cols = 0; cols < slider.value; cols++) {
+                    var newId = "cell" + cellCount;
+                    newTable += "<td width=10 height=10 ";
+                    newTable += "style='background-color:rgb(255,255,255);' ";
+                    newTable += "onclick='changeColor(\""+newId+"\")' ";
+                    newTable += "id='"+newId+"'></td>";
+                    cellCount++;
+                }
+                newTable += "</tr>";
+            }
+            newTable += "</table>"
+            
+            document.getElementById("table-container").innerHTML = newTable;
+        }
+        
+        function changePickerDisplay() {
+            var r = document.getElementById('red-amount').value;
+            var g = document.getElementById('green-amount').value;
+            var b = document.getElementById('blue-amount').value;
+	    var styling = 'rgb('+r+','+g+','+b+')';
+            document.getElementById('color-picker-display').style.backgroundColor = styling;
+        }
+        
+        function compile() {
+            var tds = document.getElementById('level-editor').getElementsByTagName('td');
+            var amt = document.getElementById('level-editor').getElementsByTagName('tr').length;
+            var counter = 0;
+            var json = "[";
+            for (let rows = 0; rows < amt; rows++) {
+                json += "[";
+                for (let cols = 0; cols < amt; cols++) {
+                    json += "\"" + tds[counter].style.backgroundColor + "\"";                    
+                    json += (cols + 1 === amt) ? "" : ",";
+                    counter++;
+                }
+                json += (rows + 1 === amt) ? "]" : "],";
+            }
+            json += "]";
+            
+	    changeLevel(json);
+            document.getElementById('json-code').value = json;
+        }
+
+	var rgbToHex = function(r, g, b) {
+		return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+	};
+
+	function hexToRgb(hex) {
+		var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+		return result ? {
+			r: parseInt(result[1], 16),
+			g: parseInt(result[2], 16),
+        		b: parseInt(result[3], 16)
+    		} : null;
+	}
+
+	function bodyColor() {
+		let offset = 10;
+		var r = parseInt(document.getElementById('red-amount').value) + ((Math.random() > 0.5) ? -10 : 10); //-1 * offset : offset));
+           	var g = parseInt(document.getElementById('green-amount').value) + ((Math.random() > 0.5) ? -10 : 10); //-1 * offset : offset));
+            	var b = parseInt(document.getElementById('blue-amount').value) + ((Math.random() > 0.5) ? -10 : 10); //-1 * offset : offset));
+		if (r > 255) {r = 255;} if (g > 255) {g = 255;} if (b > 255) {b = 255;} if (r < 0) {r = 0;} if (g < 0) {g = 0;} if (b < 0) {b = 0;}
+		var hexified = rgbToHex(r, g, b);
+		var colors = {r:r,g:g,b:b};
+		document.body.style.backgroundColor = hexified;
+		return colors;
+	}
+    </script>
+    
+   <body onload='bodyColor()'>
+   <iframe id="song-player" width='640' height='360' style="display:none;" src='' frameborder='0' frameborder='0' allowfullscreen></iframe>
+   <table align='center' onmouseover="bodyColor()" style="margin:0; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);">
+       <tr>
+           <td>
+		<h3>Level Editor:</h3>
+		<input onchange='showLevel()' type="range" min="2" max="40" value="2" class="slider" id="dimensions">
+		<p id='show-dimensions'>adjust slider to create grid</p>
+                <div id='table-container'></div>
+                <button id='compile' onclick='compile()'>compile</button>
+            </td>
+            <td align='center'>
+	    <div id='color-picker-display'>
+                <p>color picker</p>
+		<input type="color" id='color-picker' onchange='changePickerDisplay()'>
+	    </div>
+            </td>
+	    <td>
+		<h3>Your Level:</h3>
+		<div id='canvas-holder'></div>
+		<button onclick='(function(){user.pos.y = height * 0.1; user.g = 0;})()'>reboot</button>
+	    </td>
+	    <td>
+		<p>paste level code here:</p>
+		<textarea cols="50" rows="7" onchange='changeLevel()' id='level-input' placeholder="paste level code here"></textarea>
+		<br><br>
+		<p>compiled level code will appear here:</p>
+		<textarea cols="50" rows="7" id='json-code' placeholder="json will appear here"></textarea>
+		<p id='dropzone'>drop an image file here to change your character</p>
+		<p>Your Character:</p>
+		<p align='center'>
+			<img src='cgi-bin/lgm.png' id='character-display' alt='image of your character' width=50 height=50>
+		</p>
+		<p>
+			paste youtube video url to change music:
+		</p>
+		<input type="text" onchange='changeMusic()' id='music-input' placeholder="YouTube url">
+            </td>
+        </tr>
+   </table>
+   </body>
+</html>
