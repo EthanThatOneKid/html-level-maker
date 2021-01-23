@@ -4,6 +4,8 @@
 
 [![Maker Demo](cgi-bin/demo.gif)][demo_url]
 
+Check out the [demo][demo_url]!
+
 ## About
 
 This website was written with JavaScript in early 2018.
